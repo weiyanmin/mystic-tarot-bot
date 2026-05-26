@@ -13,7 +13,7 @@ const config = require('./config');
 const { handleStart } = require('./handlers/startHandler');
 const { handleYesNo, promptQuestion, processYesNoQuestion } = require('./handlers/yesNoHandler');
 const {
-  handlePremiumReading, sendReaderCarousel, handleReaderSelection, handleReaderConfirmation, promptPremiumQuestion,
+  handlePremiumReading, sendReaderTextMenu, handleReaderSelection, handleReaderConfirmation, promptPremiumQuestion,
   handleQuestionReceived, handleStopShuffle, executeReading, handleReveal,
 } = require('./handlers/premiumHandler');
 const { handleFollowUpRequest, processFollowUpQuestion } = require('./handlers/followUpHandler');
@@ -169,24 +169,6 @@ bot.on('callback_query', async (query) => {
   const data = query.data;
 
   try {
-    // Reader selection carousel navigation
-    if (data.startsWith('reader_nav:')) {
-      await bot.answerCallbackQuery(query.id);
-      const direction = data.split(':')[1];
-      const telegramId = query.from.id;
-      if (!userState[telegramId]) userState[telegramId] = {};
-      
-      const config = require('./config');
-      const readersCount = config.READERS.length;
-      let index = userState[telegramId].readerIndex || 0;
-      
-      if (direction === 'next') index = (index + 1) % readersCount;
-      if (direction === 'prev') index = (index - 1 + readersCount) % readersCount;
-      
-      userState[telegramId].readerIndex = index;
-      return sendReaderCarousel(bot, query.message.chat.id, telegramId, userState, query.message.message_id);
-    }
-
     // Reader selection
     if (data.startsWith('select_reader:')) {
       return handleReaderSelection(bot, query, userState);
@@ -201,7 +183,7 @@ bot.on('callback_query', async (query) => {
     if (data === 'reselect_reader') {
       await bot.answerCallbackQuery(query.id);
       const telegramId = query.from.id;
-      return sendReaderCarousel(bot, query.message.chat.id, telegramId, userState, query.message.message_id);
+      return sendReaderTextMenu(bot, query.message.chat.id, telegramId, userState, query.message.message_id);
     }
 
     // Stop shuffle

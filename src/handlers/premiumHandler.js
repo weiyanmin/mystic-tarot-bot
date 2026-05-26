@@ -27,12 +27,8 @@ async function handlePremiumReading(bot, msg, userState, readingType) {
     if (alreadyUsed) {
       const { backToMenuKeyboard } = require('../utils/keyboard');
       await bot.sendMessage(chatId,
-        '🌅 *You\'ve already drawn your free daily card today!*
-
-' +
-        'Come back tomorrow for fresh cosmic guidance. ✨
-
-' +
+        '🌅 *You\'ve already drawn your free daily card today!*\n\n' +
+        'Come back tomorrow for fresh cosmic guidance. ✨\n\n' +
         '_Or try a premium reading for deeper insight._',
         { parse_mode: 'Markdown', reply_markup: backToMenuKeyboard() }
       );
@@ -46,74 +42,24 @@ async function handlePremiumReading(bot, msg, userState, readingType) {
   userState[telegramId].readingType = readingType;
   userState[telegramId].readerIndex = 0; // Start at the first reader
 
+  await sendReaderTextMenu(bot, chatId, telegramId, userState);
+}
+
+async function sendReaderTextMenu(bot, chatId, telegramId, userState, messageIdToEdit = null) {
   const keyboard = {
     inline_keyboard: config.READERS.map(reader => [
-      { text: reader.name, callback_data: `confirm_reader:${reader.id}` }
+      { text: reader.name, callback_data: `select_reader:${reader.id}` }
     ])
   };
 
-  const readersText = config.READERS.map(r => `*${r.name}*\
-_${r.description}_`).join('\
-\
-');
-
-  await bot.sendMessage(chatId,
-    `🔮 *Choose Your Reader*\
-\
-${readersText}\
-\
-👇 _Tap a button below to select your guide._`,
-    { parse_mode: 'Markdown', reply_markup: keyboard }
-  );
-}
-
-async function sendReaderCarousel(bot, chatId, telegramId, userState, messageIdToEdit = null) {
-  const index = userState[telegramId].readerIndex || 0;
-  const reader = config.READERS[index];
-
-  const caption = `*${reader.name}*
-
-_${reader.description}_
-
-*Vibe:* ${reader.style}`;
-
-  // Keyboard layout:
-  // [⬅️ Previous] [Confirm] [Next ➡️]
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: '⬅️ Prev', callback_data: 'reader_nav:prev' },
-        { text: '✅ Confirm', callback_data: `select_reader:${reader.id}` },
-        { text: 'Next ➡️', callback_data: 'reader_nav:next' },
-      ]
-    ]
-  };
+  const readersText = config.READERS.map(r => `*${r.name}*\n_${r.description}_`).join('\n\n');
+  const text = `🔮 *Choose Your Reader*\n\n${readersText}\n\n👇 _Tap a button below to select your guide._`;
 
   if (messageIdToEdit) {
-    try {
-      await bot.editMessageMedia({
-        type: 'photo',
-        media: fs.createReadStream(reader.image),
-        caption: caption,
-        parse_mode: 'Markdown'
-      }, {
-        chat_id: chatId,
-        message_id: messageIdToEdit,
-        reply_markup: keyboard
-      });
-      return;
-    } catch (e) {
-      // Fallback if local file attach fails on this specific telegram API wrapper version
-      await bot.deleteMessage(chatId, messageIdToEdit).catch(() => { });
-    }
+    await bot.deleteMessage(chatId, messageIdToEdit).catch(() => {});
   }
-
-  // Send new message
-  await bot.sendPhoto(chatId, fs.createReadStream(reader.image), {
-    caption,
-    parse_mode: 'Markdown',
-    reply_markup: keyboard,
-  });
+  
+  await bot.sendMessage(chatId, text, { parse_mode: 'Markdown', reply_markup: keyboard });
 }
 
 async function handleReaderSelection(bot, callbackQuery, userState) {
@@ -124,18 +70,15 @@ async function handleReaderSelection(bot, callbackQuery, userState) {
   const reader = config.READERS.find((r) => r.id === readerId);
   if (!reader) return;
 
-  // Save temporary reader selection
   if (!userState[telegramId]) userState[telegramId] = {};
   userState[telegramId].tempReader = reader;
 
   await bot.answerCallbackQuery(callbackQuery.id);
 
-  // Update the carousel photo with the confirmation keyboard
-  const caption = `You have selected *${reader.name}*.
+  // Delete the text menu
+  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => {});
 
-_${reader.description}_
-
-Are you sure you want to proceed with this reader?`;
+  const caption = `You have selected *${reader.name}*.\n\n_${reader.description}_\n\n*Vibe:* ${reader.style}\n\nAre you sure you want to proceed with this reader?`;
 
   const confirmKeyboard = {
     inline_keyboard: [
@@ -145,14 +88,13 @@ Are you sure you want to proceed with this reader?`;
   };
 
   try {
-    await bot.editMessageCaption(caption, {
-      chat_id: chatId,
-      message_id: callbackQuery.message.message_id,
+    await bot.sendPhoto(chatId, fs.createReadStream(reader.image), {
+      caption: caption,
       parse_mode: 'Markdown',
       reply_markup: confirmKeyboard,
     });
   } catch (e) {
-    console.error('Failed to edit caption', e);
+    console.error('Failed to send preview photo', e);
   }
 }
 
@@ -172,15 +114,6 @@ async function handleReaderConfirmation(bot, callbackQuery, userState) {
 
   // Delete the confirmation photo
   await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => { });
-
-  // Send reader photo confirmation
-  await bot.sendPhoto(chatId, fs.createReadStream(reader.image), {
-    caption: `✅ *${reader.name}* will guide your reading.\
-_${reader.description}_\
-\
-*Vibe:* ${reader.style}`,
-    parse_mode: 'Markdown'
-  });
 
   // Step 2: Language
   const user = await db.getUser(telegramId);
@@ -214,26 +147,16 @@ async function promptPremiumQuestion(bot, chatId, userState, telegramId) {
 
   if (readingType === 'daily') {
     await bot.sendMessage(chatId,
-      `${typeLabels[readingType]}
-
-` +
-      '💭 *What do you seek guidance on today?*
-
-' +
+      `${typeLabels[readingType]}\n\n` +
+      '💭 *What do you seek guidance on today?*\n\n' +
       '_Type a specific focus below, or just type "Daily" for general cosmic guidance for the day ahead._',
       { parse_mode: 'Markdown' }
     );
   } else {
     await bot.sendMessage(chatId,
-      `${typeLabels[readingType] || '🔮 Tarot Reading'}
-
-` +
-      '💭 *What question weighs on your mind?*
-
-' +
-      '_Type your question below. The more specific, the more insightful the reading._
-
-' +
+      `${typeLabels[readingType] || '🔮 Tarot Reading'}\n\n` +
+      '💭 *What question weighs on your mind?*\n\n' +
+      '_Type your question below. The more specific, the more insightful the reading._\n\n' +
       'Example: _"What energy surrounds my current relationship with Alex?"_',
       { parse_mode: 'Markdown' }
     );
@@ -249,21 +172,15 @@ async function handleQuestionReceived(bot, chatId, telegramId, question, userSta
 
   if (fs.existsSync(shuffleGif)) {
     const sentMsg = await bot.sendAnimation(chatId, shuffleGif, {
-      caption: '🔀 *The cards are being shuffled...*
-
-_Focus on your question and tap when you feel ready._',
+      caption: '🔀 *The cards are being shuffled...*\n\n_Focus on your question and tap when you feel ready._',
       parse_mode: 'Markdown',
       reply_markup: stopShuffleKeyboard(),
     });
     userState[telegramId].shuffleMessageId = sentMsg.message_id;
   } else {
     const sentMsg = await bot.sendMessage(chatId,
-      '🔀 *The cards are being shuffled...*
-
-' +
-      '✨ _The deck responds to your energy. Focus on your question..._
-
-' +
+      '🔀 *The cards are being shuffled...*\n\n' +
+      '✨ _The deck responds to your energy. Focus on your question..._\n\n' +
       '_Tap below when you feel ready to draw._',
       {
         parse_mode: 'Markdown',
@@ -290,12 +207,8 @@ async function handleStopShuffle(bot, callbackQuery, userState) {
 
   // Edit the shuffle message
   const statusText = isAdmin
-    ? '🃏 *Cards have been drawn!*
-
-_Admin mode — skipping payment..._'
-    : '🃏 *Cards have been drawn!*
-
-_Processing your payment..._';
+    ? '🃏 *Cards have been drawn!*\n\n_Admin mode — skipping payment..._'
+    : '🃏 *Cards have been drawn!*\n\n_Processing your payment..._';
 
   try {
     await bot.editMessageCaption(statusText, {
@@ -360,9 +273,7 @@ _Processing your payment..._';
       } else {
         console.log(`🔓 Admin bypass for user ${telegramId}`);
         await bot.sendMessage(chatId,
-          '🔓 *Admin Mode — Payment Bypassed*
-
-🔮 _Channeling the cosmic energy..._',
+          '🔓 *Admin Mode — Payment Bypassed*\n\n🔮 _Channeling the cosmic energy..._',
           { parse_mode: 'Markdown' }
         );
       }
@@ -384,9 +295,7 @@ _Processing your payment..._';
     await bot.sendInvoice(
       chatId,
       title,
-      `✨ ${title}
-🔮 ${cardCount} cards + AI interpretation
-🌟 Personalized reading by ${userState[telegramId]?.selectedReader?.name || 'Mystic Reader'}`,
+      `✨ ${title}\n🔮 ${cardCount} cards + AI interpretation\n🌟 Personalized reading by ${userState[telegramId]?.selectedReader?.name || 'Mystic Reader'}`,
       `session_${session?.id}`,        // payload
       '',                               // provider_token (empty for Stars)
       'XTR',                            // currency (Telegram Stars)
@@ -445,8 +354,7 @@ async function executeReading(bot, chatId, telegramId, userState, sessionId) {
         card.is_reversed
       );
       if (imagePath && fs.existsSync(imagePath)) {
-        const jumperNote = card.is_jumper ? '⚡ _A card flew from the deck!_
-' : '';
+        const jumperNote = card.is_jumper ? '⚡ _A card flew from the deck!_\n' : '';
         const cardObj = card.card || card;
         const caption = `${jumperNote}${formatCardDisplay(cardObj, card.is_reversed)}`;
         await bot.sendPhoto(chatId, imagePath, {
@@ -460,8 +368,7 @@ async function executeReading(bot, chatId, telegramId, userState, sessionId) {
 
     if (hasJumper) {
       await bot.sendMessage(chatId,
-        '⚡ *A Jumper Card appeared!*
-This card carries the hidden theme that permeates your entire reading.',
+        '⚡ *A Jumper Card appeared!*\nThis card carries the hidden theme that permeates your entire reading.',
         { parse_mode: 'Markdown' }
       );
     }
@@ -488,8 +395,7 @@ This card carries the hidden theme that permeates your entire reading.',
     } catch {
       // Fallback: send without spoiler if MarkdownV2 fails
       const promptMsg = await bot.sendMessage(chatId,
-        '👁 *Your reading is ready!*
-_Tap "Reveal" to see your full interpretation._',
+        '👁 *Your reading is ready!*\n_Tap "Reveal" to see your full interpretation._',
         {
           parse_mode: 'Markdown',
           reply_markup: revealReadingKeyboard(sessionDbId),
@@ -576,7 +482,7 @@ async function handleReveal(bot, callbackQuery, userState) {
 
 module.exports = {
   handlePremiumReading,
-  sendReaderCarousel,
+  sendReaderTextMenu,
   handleReaderSelection,
   handleReaderConfirmation,
   promptPremiumQuestion,
