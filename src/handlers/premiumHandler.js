@@ -9,9 +9,9 @@ const { getCardImagePath, getShuffleGifPath } = require('../services/imageServic
 const { generateReading } = require('../services/geminiService');
 const { buildReadingPrompt } = require('../prompts/systemPrompts');
 const { sendTypingAction, formatCardDisplay, delay, sendSplitMessage } = require('../utils/helpers');
-const { 
-  readerSelectionKeyboard, stopShuffleKeyboard, 
-  followUpKeyboard, revealReadingKeyboard 
+const {
+  readerSelectionKeyboard, stopShuffleKeyboard,
+  followUpKeyboard, revealReadingKeyboard
 } = require('../utils/keyboard');
 const { promptLanguage } = require('./languageHandler');
 const { needsOnboarding, startOnboarding } = require('./onboardingHandler');
@@ -42,20 +42,24 @@ async function handlePremiumReading(bot, msg, userState, readingType) {
   userState[telegramId].readingType = readingType;
   userState[telegramId].readerIndex = 0; // Start at the first reader
 
-  await bot.sendMessage(chatId,
-    '🔮 *Choose Your Reader*\n\n' +
-    'Each reader brings a unique energy and perspective to your reading.',
-    { parse_mode: 'Markdown' }
-  );
+  const keyboard = {
+    inline_keyboard: config.READERS.map(reader => [
+      { text: reader.name, callback_data: `confirm_reader:${reader.id}` }
+    ])
+  };
 
-  // Send the first reader in the carousel
-  await sendReaderCarousel(bot, chatId, telegramId, userState);
+  const readersText = config.READERS.map(r => `*${r.name}*\\n_${r.description}_`).join('\\n\\n');
+
+  await bot.sendMessage(chatId,
+    `🔮 *Choose Your Reader*\\n\\n${readersText}\\n\\n👇 _Tap a button below to select your guide._`,
+    { parse_mode: 'Markdown', reply_markup: keyboard }
+  );
 }
 
 async function sendReaderCarousel(bot, chatId, telegramId, userState, messageIdToEdit = null) {
   const index = userState[telegramId].readerIndex || 0;
   const reader = config.READERS[index];
-  
+
   const caption = `*${reader.name}*\n\n_${reader.description}_\n\n*Vibe:* ${reader.style}`;
 
   // Keyboard layout:
@@ -85,10 +89,10 @@ async function sendReaderCarousel(bot, chatId, telegramId, userState, messageIdT
       return;
     } catch (e) {
       // Fallback if local file attach fails on this specific telegram API wrapper version
-      await bot.deleteMessage(chatId, messageIdToEdit).catch(() => {});
+      await bot.deleteMessage(chatId, messageIdToEdit).catch(() => { });
     }
   }
-  
+
   // Send new message
   await bot.sendPhoto(chatId, fs.createReadStream(reader.image), {
     caption,
@@ -110,10 +114,10 @@ async function handleReaderSelection(bot, callbackQuery, userState) {
   userState[telegramId].tempReader = reader;
 
   await bot.answerCallbackQuery(callbackQuery.id);
-  
+
   // Update the carousel photo with the confirmation keyboard
   const caption = `You have selected *${reader.name}*.\n\n_${reader.description}_\n\nAre you sure you want to proceed with this reader?`;
-  
+
   const confirmKeyboard = {
     inline_keyboard: [
       [{ text: '✅ Proceed with ' + reader.name, callback_data: `confirm_reader:${reader.id}` }],
@@ -146,10 +150,10 @@ async function handleReaderConfirmation(bot, callbackQuery, userState) {
   userState[telegramId].tempReader = null;
 
   await bot.answerCallbackQuery(callbackQuery.id, { text: `${reader.name} confirmed!` });
-  
+
   // Delete the confirmation photo
-  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => {});
-  
+  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => { });
+
   // Send simple text confirmation
   await bot.sendMessage(chatId,
     `✅ *${reader.name}* will guide your reading.\n_${reader.description}_`,
@@ -210,7 +214,7 @@ async function handleQuestionReceived(bot, chatId, telegramId, question, userSta
 
   // Step 5: Shuffle animation + Stop button
   const shuffleGif = getShuffleGifPath();
-  
+
   if (fs.existsSync(shuffleGif)) {
     const sentMsg = await bot.sendAnimation(chatId, shuffleGif, {
       caption: '🔀 *The cards are being shuffled...*\n\n_Focus on your question and tap when you feel ready._',
@@ -287,7 +291,7 @@ async function handleStopShuffle(bot, callbackQuery, userState) {
     // Create pending session in DB before payment
     const cardCount = config.CARD_COUNTS[readingType] || 3;
     const { cards, hasJumper } = drawCards(cardCount, readingType);
-    
+
     // Store drawn cards in state (will be delivered after payment)
     userState[telegramId].drawnCards = cards;
     userState[telegramId].hasJumper = hasJumper;
@@ -318,7 +322,7 @@ async function handleStopShuffle(bot, callbackQuery, userState) {
           { parse_mode: 'Markdown' }
         );
       }
-      
+
       await executeReading(bot, chatId, telegramId, userState);
       return;
     }
@@ -490,7 +494,7 @@ async function handleReveal(bot, callbackQuery, userState) {
   await bot.answerCallbackQuery(callbackQuery.id, { text: '✨ Revealing your reading...' });
 
   // Try to delete the message containing the button
-  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => {});
+  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => { });
 
   // Check if we have a pending reading in state
   const pendingReading = userState[telegramId]?.pendingReading;
