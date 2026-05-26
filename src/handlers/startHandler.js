@@ -49,12 +49,6 @@ async function handleStart(bot, msg) {
     ? `🔮 *Welcome back, ${user.display_name}!*`
     : `🔮 *Welcome to FateNode — AI Tarot Reader!*`;
 
-  let referralLine = '';
-  if (user && user.referral_code) {
-    const referralLink = generateReferralLink(config.BOT_USERNAME, user.referral_code);
-    referralLine = `\n📤 _Share & earn! Your referral link:_ \`${referralLink}\``;
-  }
-
   // Create inline keyboard attached to the message
   const inlineMenu = {
     inline_keyboard: [
@@ -74,9 +68,8 @@ async function handleStart(bot, msg) {
     '✨ *Quick Yes/No*\n_A swift answer to your burning question_\n\n' +
     '⏳ *Past, Present, Future*\n_Understand your timeline_\n\n' +
     '❤️ *Love & Relationships*\n_Matters of the heart_\n\n' +
-    '💼 *Career & Finance*\n_Professional guidance_\n\n' +
-    '👇 _Tap a button below to begin your journey..._' +
-    referralLine,
+    '💼 *Career & Finance*\\n_Professional guidance_\\n\\n' +
+    '👇 _Tap a button below to begin your journey..._',
     {
       parse_mode: 'Markdown',
       reply_markup: inlineMenu,

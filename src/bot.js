@@ -46,14 +46,6 @@ bot.onText(/\/start(.*)/, (msg) => handleStart(bot, msg));
 
 bot.onText(/\/referral/, (msg) => handleReferral(bot, msg));
 
-bot.onText(/\/myid/, async (msg) => {
-  const isAdmin = config.ADMIN_TELEGRAM_IDS.includes(msg.from.id);
-  await bot.sendMessage(msg.chat.id,
-    `🆔 *Your Telegram ID:* \`${msg.from.id}\`\n${isAdmin ? '🔓 _Admin privileges active_' : ''}`,
-    { parse_mode: 'Markdown' }
-  );
-});
-
 bot.onText(/\/help/, async (msg) => {
   await bot.sendMessage(msg.chat.id,
     '🔮 *Mystic Tarot Reader — Help*\n\n' +

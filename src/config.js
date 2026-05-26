@@ -20,9 +20,9 @@ module.exports = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 
   // Pricing (Telegram Stars)
-  PRICE_QUICK_READING: parseInt(process.env.PRICE_QUICK_READING || '50'),
-  PRICE_DEEP_READING: parseInt(process.env.PRICE_DEEP_READING || '100'),
-  PRICE_FOLLOW_UP: parseInt(process.env.PRICE_FOLLOW_UP || '30'),
+  PRICE_QUICK_READING: parseInt(process.env.PRICE_QUICK_READING || '25'),
+  PRICE_DEEP_READING: parseInt(process.env.PRICE_DEEP_READING || '25'),
+  PRICE_FOLLOW_UP: parseInt(process.env.PRICE_FOLLOW_UP || '25'),
 
   // Card Mechanics
   REVERSAL_CHANCE: parseFloat(process.env.REVERSAL_CHANCE || '0.30'),
