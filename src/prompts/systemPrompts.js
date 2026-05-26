@@ -22,6 +22,7 @@ FORMATTING RULES:
 - Keep responses extremely concise and direct (200-300 words for full readings, 50-100 for yes/no)
 - Use emojis sparingly but effectively to enhance the mystical atmosphere
 - Structure readings with clear sections using line breaks
+- CRITICAL LANGUAGE RULE: You MUST detect the language the user used to ask their question, and write your ENTIRE response in that exact same language.
 `;
 
 function buildReaderPersonaPrompt(reader) {
