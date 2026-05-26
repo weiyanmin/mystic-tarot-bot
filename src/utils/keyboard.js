@@ -90,9 +90,11 @@ function paymentKeyboard(readingType) {
  * Referral share keyboard
  */
 function referralKeyboard(referralLink) {
+  const shareText = encodeURIComponent('Get a cosmic Tarot reading from this AI! 🔮✨');
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${shareText}`;
   return {
     inline_keyboard: [
-      [{ text: '📤 Share Your Referral Link', url: referralLink }],
+      [{ text: '📤 Share with a Friend', url: shareUrl }],
     ],
   };
 }

@@ -34,7 +34,9 @@ async function handleStart(bot, msg) {
   const incompleteSession = await db.getIncompleteSession(telegramId);
   if (incompleteSession) {
     await bot.sendMessage(chatId,
-      '⚡ *Welcome back!*\n\n' +
+      '⚡ *Welcome back!*
+
+' +
       'I noticed you have an undelivered reading from a previous session. ' +
       'Let me process that for you right now...',
       { parse_mode: 'Markdown' }
@@ -61,14 +63,35 @@ async function handleStart(bot, msg) {
   };
 
   await bot.sendMessage(chatId,
-    `${welcomeText}\n\n` +
-    '✨ I am your gateway to ancient wisdom and cosmic insight.\n\n' +
-    'Choose your path below:\n\n' +
-    '🃏 *Daily Free Card*\n_Your daily guidance from the universe_\n\n' +
-    '✨ *Quick Yes/No*\n_A swift answer to your burning question_\n\n' +
-    '⏳ *Past, Present, Future*\n_Understand your timeline_\n\n' +
-    '❤️ *Love & Relationships*\n_Matters of the heart_\n\n' +
-    '💼 *Career & Finance*\\n_Professional guidance_\\n\\n' +
+    `${welcomeText}
+
+` +
+    '✨ I am your gateway to ancient wisdom and cosmic insight.
+
+' +
+    'Choose your path below:
+
+' +
+    '🃏 *Daily Free Card*
+_Your daily guidance from the universe_
+
+' +
+    '✨ *Quick Yes/No*
+_A swift answer to your burning question_
+
+' +
+    '⏳ *Past, Present, Future*
+_Understand your timeline_
+
+' +
+    '❤️ *Love & Relationships*
+_Matters of the heart_
+
+' +
+    '💼 *Career & Finance*\
+_Professional guidance_\
+\
+' +
     '👇 _Tap a button below to begin your journey..._',
     {
       parse_mode: 'Markdown',
