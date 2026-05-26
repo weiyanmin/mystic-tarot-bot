@@ -331,3 +331,18 @@ process.on('unhandledRejection', (error) => {
 });
 
 console.log('🔮 Mystic Tarot Reader Bot is live and listening!');
+
+// ─── DUMMY WEB SERVER FOR CLOUD HOSTING (Render/Heroku) ─────
+// Web Services require the app to bind to a PORT, otherwise they crash.
+const http = require('http');
+const port = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Mystic Tarot Reader Bot is running!\\n');
+});
+
+server.listen(port, () => {
+  console.log(`🌐 Dummy web server is listening on port ${port}`);
+});
