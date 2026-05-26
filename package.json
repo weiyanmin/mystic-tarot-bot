@@ -1,0 +1,21 @@
+{
+  "name": "mystic-tarot-reader-bot",
+  "version": "1.0.0",
+  "description": "🔮 Mystic Tarot Reader — AI-powered Telegram Tarot Bot with Gemini, Supabase, and Telegram Stars",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "node --watch src/bot.js"
+  },
+  "keywords": ["telegram", "bot", "tarot", "gemini", "ai"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.49.8",
+    "dotenv": "^16.5.0",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.66.0",
+    "sharp": "^0.34.1"
+  }
+}
