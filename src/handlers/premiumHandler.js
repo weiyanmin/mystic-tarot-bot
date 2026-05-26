@@ -71,8 +71,22 @@ async function sendReaderCarousel(bot, chatId, telegramId, userState, messageIdT
   };
 
   if (messageIdToEdit) {
-    // Delete the old photo message and send a new one to avoid local file attach issues
-    await bot.deleteMessage(chatId, messageIdToEdit).catch(() => {});
+    try {
+      await bot.editMessageMedia({
+        type: 'photo',
+        media: fs.createReadStream(reader.image),
+        caption: caption,
+        parse_mode: 'Markdown'
+      }, {
+        chat_id: chatId,
+        message_id: messageIdToEdit,
+        reply_markup: keyboard
+      });
+      return;
+    } catch (e) {
+      // Fallback if local file attach fails on this specific telegram API wrapper version
+      await bot.deleteMessage(chatId, messageIdToEdit).catch(() => {});
+    }
   }
   
   // Send new message
@@ -107,14 +121,16 @@ async function handleReaderSelection(bot, callbackQuery, userState) {
     ]
   };
 
-  // Delete the old carousel photo and send confirmation message
-  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => {});
-  
-  await bot.sendPhoto(chatId, fs.createReadStream(reader.image), {
-    caption,
-    parse_mode: 'Markdown',
-    reply_markup: confirmKeyboard,
-  });
+  try {
+    await bot.editMessageCaption(caption, {
+      chat_id: chatId,
+      message_id: callbackQuery.message.message_id,
+      parse_mode: 'Markdown',
+      reply_markup: confirmKeyboard,
+    });
+  } catch (e) {
+    console.error('Failed to edit caption', e);
+  }
 }
 
 async function handleReaderConfirmation(bot, callbackQuery, userState) {
