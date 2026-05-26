@@ -3,7 +3,7 @@ require('dotenv').config();
 module.exports = {
   // Telegram
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
-  BOT_USERNAME: process.env.BOT_USERNAME || 'TarotReaderBot',
+  BOT_USERNAME: process.env.BOT_USERNAME || 'FateNode_bot',
 
   // Admin IDs (bypass payment for testing)
   ADMIN_TELEGRAM_IDS: (process.env.ADMIN_TELEGRAM_IDS || '')
