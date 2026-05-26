@@ -18,6 +18,8 @@ const { needsOnboarding, startOnboarding } = require('./onboardingHandler');
 const config = require('../config');
 const fs = require('fs');
 
+const cardImageCache = {};
+
 async function handlePremiumReading(bot, msg, userState, readingType) {
   const chatId = msg.chat.id;
   const telegramId = msg.from.id;
@@ -56,9 +58,9 @@ async function sendReaderTextMenu(bot, chatId, telegramId, userState, messageIdT
   const text = `🔮 *Choose Your Reader*\n\n${readersText}\n\n👇 _Tap a button below to select your guide._`;
 
   if (messageIdToEdit) {
-    await bot.deleteMessage(chatId, messageIdToEdit).catch(() => {});
+    await bot.deleteMessage(chatId, messageIdToEdit).catch(() => { });
   }
-  
+
   await bot.sendMessage(chatId, text, { parse_mode: 'Markdown', reply_markup: keyboard });
 }
 
@@ -76,7 +78,7 @@ async function handleReaderSelection(bot, callbackQuery, userState) {
   await bot.answerCallbackQuery(callbackQuery.id);
 
   // Delete the text menu
-  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => {});
+  await bot.deleteMessage(chatId, callbackQuery.message.message_id).catch(() => { });
 
   const caption = `You have selected *${reader.name}*.\n\n_${reader.description}_\n\n*Vibe:* ${reader.style}\n\nAre you sure you want to proceed with this reader?`;
 
@@ -357,11 +359,19 @@ async function executeReading(bot, chatId, telegramId, userState, sessionId) {
         const jumperNote = card.is_jumper ? '⚡ _A card flew from the deck!_\n' : '';
         const cardObj = card.card || card;
         const caption = `${jumperNote}${formatCardDisplay(cardObj, card.is_reversed)}`;
-        await bot.sendPhoto(chatId, imagePath, {
+        
+        const media = cardImageCache[imagePath] ? cardImageCache[imagePath] : fs.createReadStream(imagePath);
+        
+        const sentMsg = await bot.sendPhoto(chatId, media, {
           caption,
           parse_mode: 'Markdown',
           protect_content: false,
         });
+        
+        if (!cardImageCache[imagePath] && sentMsg.photo) {
+          cardImageCache[imagePath] = sentMsg.photo[sentMsg.photo.length - 1].file_id;
+        }
+        
         await delay(500); // Slight delay between cards for dramatic effect
       }
     }
